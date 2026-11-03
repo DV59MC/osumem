@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install Android workload
+        run: dotnet workload install android
+
+      - name: Build APK (arm64)
+        run: >
+          dotnet publish osu.Android/osu.Android.csproj
+          -c Release
+          -r android-arm64
+          -p:AndroidPackageFormat=apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: osu-android-apk
+          path: |
+            osu.Android/bin/Release/**/*-Signed.apk
+            osu.Android/bin/Release/**/*.apk
+          if-no-files-found: error
